@@ -12,7 +12,7 @@ export function LivePreview({ files, activeFile }: LivePreviewProps) {
   const { theme } = useTheme()
 
   // Convert our file structure to Sandpack format
-  const sandpackFiles = Object.keys(files).reduce((acc, fileName) => {
+  const sandpackFiles: Record<string, { code: string }> = Object.keys(files).reduce((acc, fileName) => {
     acc[`/${fileName}`] = {
       code: files[fileName]
     }
@@ -34,7 +34,7 @@ export function LivePreview({ files, activeFile }: LivePreviewProps) {
   }
 
   // Add default files if they don't exist
-  const defaultFiles = {
+  const defaultFiles: Record<string, { code: string }> = {
     '/public/index.html': {
       code: `<!DOCTYPE html>
 <html lang="en">
@@ -50,11 +50,10 @@ export function LivePreview({ files, activeFile }: LivePreviewProps) {
     }
   }
 
-  const allFiles = { ...defaultFiles, ...sandpackFiles }
-
   // Add index.js if it doesn't exist and we have App.js
+  const indexFile: Record<string, { code: string }> = {}
   if (!files['index.js'] && files['App.js']) {
-    allFiles['/index.js'] = {
+    indexFile['/index.js'] = {
       code: `import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -69,13 +68,22 @@ root.render(
   }
 
   // Add package.json for dependencies
-  allFiles['/package.json'] = {
-    code: JSON.stringify({
-      dependencies: {
-        react: '^18.2.0',
-        'react-dom': '^18.2.0'
-      }
-    }, null, 2)
+  const packageJson: Record<string, { code: string }> = {
+    '/package.json': {
+      code: JSON.stringify({
+        dependencies: {
+          react: '^18.2.0',
+          'react-dom': '^18.2.0'
+        }
+      }, null, 2)
+    }
+  }
+
+  const allFiles: Record<string, { code: string }> = { 
+    ...defaultFiles, 
+    ...sandpackFiles, 
+    ...indexFile,
+    ...packageJson
   }
 
   return (
@@ -88,13 +96,11 @@ root.render(
             showNavigator: false,
             showRefreshButton: true,
             showInlineErrors: true,
-            bundlerURL: undefined,
-            logLevel: 'error',
             editorHeight: 300,
             editorWidthPercentage: 50,
             wrapContent: true,
-            initMode: 'lazy',
-            recompileMode: 'delayed',
+            initMode: 'lazy' as const,
+            recompileMode: 'delayed' as const,
             recompileDelay: 300,
             autorun: true,
             autoReload: true,
@@ -105,19 +111,9 @@ root.render(
             visibleFiles: Object.keys(allFiles),
             activeFile: getMainFile(),
             readOnly: false,
-            readOnlyMessage: undefined,
             showReadOnly: true,
             resizablePanels: true,
-            showLineNumbers: true,
-            showInlineErrors: true,
-            showErrorScreen: true,
-            showLoadingScreen: true,
-            editorMode: 'user-visible',
-            codeEditor: {
-              initMode: 'lazy',
-              extensions: [],
-              extensionsKey: 'default'
-            }
+            showLineNumbers: true
           }}
           theme={theme === 'dark' ? 'dark' : 'light'}
           customSetup={{
